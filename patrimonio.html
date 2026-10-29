@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi patrimonio</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f3;--card:#fff;--ink:#12231e;--mut:#5d6f68;--line:#dbe3df;--ac:#0b6e5a;--ac2:#e0f0ea;--neg:#b3392f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0e1815;--card:#16241f;--ink:#e8f0ec;--mut:#93a8a0;--line:#26362f;--ac:#4cc4a4;--ac2:#1b3a31;--neg:#f08a7e}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0e1815;--card:#16241f;--ink:#e8f0ec;--mut:#93a8a0;--line:#26362f;--ac:#4cc4a4;--ac2:#1b3a31;--neg:#f08a7e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Manrope,system-ui,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:640px;margin:0 auto;padding:20px 16px 110px}
+h1{font-size:15px;font-weight:600;color:var(--mut);margin:0 0 4px}
+h2{font-size:18px;margin:26px 0 10px}
+.tot{font-size:clamp(40px,12vw,60px);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:0 0 6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.mut{color:var(--mut);font-size:14px}.pos{color:var(--ac)}.neg{color:var(--neg)}
+.tabs{display:flex;gap:6px;margin:14px 0}
+.tabs button,.btn,.opt{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+.tabs button.on,.btn.main{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}
+:root[data-theme="dark"] .btn.main,:root[data-theme="dark"] .tabs button.on{color:#06120e}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:14px 16px;font-size:16px}
+.opt:focus-visible,.btn:focus-visible,input:focus-visible,textarea:focus-visible,.tabs button:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+input,textarea{font:inherit;width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+textarea{min-height:110px;font-size:13px}
+.bar{height:6px;background:var(--line);border-radius:6px;margin:6px 0 22px}.bar i{display:block;height:100%;background:var(--ac);border-radius:6px}
+.legend{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.legend div{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}
+.flex{display:flex;align-items:center;gap:16px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;max-width:150px;font:inherit;font-size:13px;background:none;border:0;color:var(--mut);padding:8px 4px;cursor:pointer;border-radius:8px}
+nav button.on{color:var(--ac);font-weight:800}
+nav button:focus-visible{outline:3px solid var(--ac)}
+.lock{max-width:380px;margin:12vh auto 0}
+.err{color:var(--neg);font-size:14px;min-height:20px}
+.sp{display:flex;gap:8px;margin-top:14px}.sp .btn{flex:1}
+@media(prefers-reduced-motion:no-preference){.bar i{transition:width .25s}}
+</style></head>
+<body><main id="m"></main><nav id="nv" hidden></nav>
+<script>
+const $=s=>document.querySelector(s),EF=new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}),eur=n=>EF.format(n);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=x=>{const v=parseFloat(String(x==null?'':x).replace(',','.'));return isNaN(v)?0:v};
+const today=()=>new Date().toISOString().slice(0,10);
+const days=(a,b)=>{const d=(new Date(b)-new Date(a))/864e5;return d>0?d:0};
+const PAL=['#0b6e5a','#d98e04','#3a6ea5','#b3392f','#7a5fa8','#4fa38a','#8a8f2a','#c25b8e'];
+const D0=()=>({items:[],hist:[]});let D=D0(),K=null,SALT=null,view='home',grp='t',W=null,sel=null;
+const Q=(k,l,t,c)=>[k,l,t,c];
+const T={
+cuenta:{n:'Cuenta',l:'Inmediata',q:[Q('nombre','¿Cómo quieres llamarla?','t'),Q('ent','¿En qué entidad está?','t'),Q('saldo','¿Qué saldo tiene hoy? (€)','n'),Q('rent','¿Tiene rentabilidad?','y'),Q('tae','¿Qué % anual (TAE) ofrece?','n','rent'),Q('pago','¿Cada cuánto paga los intereses?','s:Diario|Mensual|Trimestral|Anual','rent'),Q('comp','¿Con interés compuesto?','y','rent'),Q('hasta','¿Hasta cuándo dura esa rentabilidad? (vacío si no caduca)','d','rent'),Q('nom','¿Exige tener la nómina domiciliada?','y'),Q('ben','¿Tiene algún beneficio o bonificación? (opcional)','t')]},
+deposito:{n:'Depósito',l:'Hasta vencimiento',q:[Q('nombre','¿Cómo quieres llamarlo?','t'),Q('ent','¿En qué entidad está?','t'),Q('imp','¿Qué importe depositaste? (€)','n'),Q('tae','¿Qué % anual (TAE) paga?','n'),Q('ini','¿Desde qué fecha?','d'),Q('fin','¿Hasta qué fecha?','d')]},
+accion:{n:'Acciones',l:'Alta',q:[Q('isin','¿Cuál es el código ISIN de la acción?','t'),Q('nombre','¿Cómo se llama la empresa?','t'),Q('ent','¿En qué broker la compraste?','t'),Q('fc','¿En qué fecha la compraste?','d'),Q('cant','¿Cuántas acciones compraste?','n'),Q('pcom','¿A qué precio por acción? (€)','n'),Q('pact','¿Cuál es el precio actual por acción? (€)','n')]},
+fondo:{n:'Fondo',l:'Media',q:[Q('nombre','¿Cómo se llama el fondo?','t'),Q('isin','¿Cuál es su ISIN? (opcional)','t'),Q('ent','¿En qué entidad o gestora lo tienes?','t'),Q('cant','¿Cuántas participaciones tienes?','n'),Q('pcom','¿A qué precio las compraste? (€)','n'),Q('pact','¿Cuál es el valor actual de cada participación? (€)','n')]},
+cripto:{n:'Cripto',l:'Alta',q:[Q('nombre','¿Qué moneda es?','t'),Q('ent','¿Dónde la guardas? (exchange o wallet)','t'),Q('cant','¿Qué cantidad tienes?','n'),Q('pcom','¿A qué precio la compraste? (€)','n'),Q('pact','¿Cuál es su precio actual? (€)','n')]},
+p2p:{n:'Préstamo P2P',l:'Hasta vencimiento',q:[Q('nombre','¿Cómo quieres llamarlo?','t'),Q('ent','¿En qué plataforma está?','t'),Q('orig','¿Quién es el originador del préstamo?','t'),Q('imp','¿Qué importe invertiste? (€)','n'),Q('tae','¿Qué rentabilidad anual tiene? (%)','n'),Q('ini','¿Desde qué fecha?','d'),Q('fin','¿Hasta qué fecha?','d'),Q('cobro','¿Cómo cobras los intereses?','s:Mensual|Al vencimiento|Otro')]},
+inmueble:{n:'Inmueble',l:'Baja',q:[Q('nombre','¿Cómo quieres llamarlo?','t'),Q('tipo','¿Qué tipo es?','s:Vivienda|Local|Garaje|Terreno|Otro'),Q('ent','¿Dónde está? (ubicación)','t'),Q('pc','¿Por cuánto lo compraste? (€)','n'),Q('fc','¿En qué fecha lo compraste?','d'),Q('valor','¿Cuánto crees que vale hoy? (€)','n'),Q('hip','¿Tiene hipoteca?','y'),Q('hipo','¿Cuánto te queda por pagar? (€)','n','hip'),Q('alq','¿Lo tienes alquilado?','y'),Q('alqm','¿Cuánto es el alquiler mensual? (€)','n','alq'),Q('amort','¿Cuánto has amortizado ya con el alquiler hasta hoy? (€, pon 0 si empiezas ahora)','n','alq')]}};
+Object.values(T).forEach(t=>t.q.push(Q('com','¿Quieres añadir un comentario? (opcional)','t')));
+const PX=i=>{const p=D.px&&D.px[(i.a.isin||'').toUpperCase()];return p!=null?p:i.a.pact};
+const LBL={ent:'Entidad',saldo:'Saldo',tae:'Rentabilidad anual (%)',pago:'Pago de intereses',comp:'Interés compuesto',hasta:'Rentabilidad hasta',nom:'Nómina domiciliada',ben:'Beneficio',imp:'Importe',ini:'Inicio',fin:'Vencimiento',tick:'Ticker',cant:'Cantidad',pcom:'Precio de compra',pact:'Precio actual',isin:'ISIN',orig:'Originador',cobro:'Cobro de intereses',tipo:'Tipo',pc:'Precio de compra',fc:'Fecha de compra',valor:'Valor estimado',hip:'Hipoteca',hipo:'Hipoteca pendiente',alq:'Alquilado',alqm:'Alquiler mensual',amort:'Amortizado al empezar',com:'Comentario'};
+const UPD={cuenta:['saldo','Nuevo saldo'],accion:['pact','Nuevo precio actual'],fondo:['pact','Nuevo valor por participación'],cripto:['pact','Nuevo precio actual'],inmueble:['valor','Nuevo valor estimado']};
+function val(i){const a=i.a,t=i.t;
+ if(t=='cuenta'){let v=num(a.saldo);if(a.rent=='Sí'){const end=a.hasta&&a.hasta<today()?a.hasta:today(),d=days(i.f,end),r=num(a.tae)/100;v=a.comp=='Sí'?v*Math.pow(1+r,d/365):v*(1+r*d/365)}return v}
+ if(t=='deposito'||t=='p2p'){const d=Math.min(days(a.ini,today()),days(a.ini,a.fin));return num(a.imp)*(1+num(a.tae)/100*d/365)}
+ if(t=='inmueble')return num(a.valor)-(a.hip=='Sí'?num(a.hipo):0);
+ return num(a.cant)*num(PX(i))}
+function cost(i){const a=i.a,t=i.t;if(t=='cuenta')return num(a.saldo);if(t=='deposito'||t=='p2p')return num(a.imp);if(t=='inmueble')return num(a.pc);return num(a.cant)*num(a.pcom)}
+const total=()=>D.items.reduce((s,i)=>s+val(i),0);
+function snap(){const t=Math.round(total()*100)/100,h=D.hist,l=h[h.length-1];if(l&&l.d==today())l.v=t;else h.push({d:today(),v:t})}
+const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b))),ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function mk(pw,salt){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:150000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function save(){try{const iv=crypto.getRandomValues(new Uint8Array(12)),c=await crypto.subtle.encrypt({name:'AES-GCM',iv},K,new TextEncoder().encode(JSON.stringify(D)));localStorage.setItem('pat',JSON.stringify({s:b64(SALT),i:b64(iv),d:b64(c)}))}catch(e){}}
+function stored(){try{return JSON.parse(localStorage.getItem('pat'))}catch(e){return null}}
+async function unlock(){const pw=$('#pw').value;if(pw.length<6){$('#er').textContent='Usa al menos 6 caracteres.';return}
+ const raw=stored();
+ try{if(raw){SALT=ub(raw.s);K=await mk(pw,SALT);D=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(raw.i)},K,ub(raw.d))))}
+ else{SALT=crypto.getRandomValues(new Uint8Array(16));K=await mk(pw,SALT);D=D0();await save()}}
+ catch(e){$('#er').textContent='Contraseña incorrecta.';return}
+ snap();await save();view='home';render()}
+function lock(){K=null;D=D0();view='home';render()}
+function donut(g){const t=g.reduce((s,x)=>s+x[1],0),r=52,c=2*Math.PI*r;let o=0;
+ return '<svg viewBox="0 0 140 140" width="150" height="150" role="img" aria-label="Diversificación">'+g.map((x,k)=>{const l=x[1]/t*c,s='<circle cx="70" cy="70" r="'+r+'" fill="none" stroke="'+PAL[k%8]+'" stroke-width="22" stroke-dasharray="'+l+' '+(c-l)+'" stroke-dashoffset="'+(-o)+'" transform="rotate(-90 70 70)"/>';o+=l;return s}).join('')+'</svg>'}
+function groups(){const m={};D.items.forEach(i=>{const v=val(i);if(v<=0)return;const k=grp=='t'?T[i.t].n:grp=='e'?(i.a.ent||'Sin entidad'):T[i.t].l;m[k]=(m[k]||0)+v});return Object.entries(m).sort((a,b)=>b[1]-a[1])}
+function line(){const h=D.hist.slice(-60);if(h.length<2)return '<p class="mut">La evolución aparecerá cuando tengas datos de varios días.</p>';
+ const mn=Math.min(...h.map(x=>x.v)),mx=Math.max(...h.map(x=>x.v)),sp=mx-mn||1;
+ const p=h.map((x,k)=>(k/(h.length-1)*300).toFixed(1)+','+(70-(x.v-mn)/sp*60).toFixed(1)).join(' ');
+ return '<svg viewBox="0 0 300 80" width="100%" role="img" aria-label="Evolución del patrimonio"><polyline points="'+p+'" fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-linejoin="round"/></svg><div class="row mut"><span>'+h[0].d+'</span><span>'+h[h.length-1].d+'</span></div>'}
+function gainTxt(i){if(i.t=='inmueble')return '';const g=val(i)-cost(i);const lab=['cuenta','deposito','p2p'].includes(i.t)?' intereses':'';return '<span class="'+(g>=0?'pos':'neg')+'">'+(g>=0?'+':'')+eur(g)+lab+'</span>'}
+function rentTxt(i){const a=i.a,t=i.t;if(t=='cuenta')return a.rent=='Sí'?' · '+a.tae+'% anual':' · sin rentabilidad';if(t=='deposito'||t=='p2p')return ' · '+a.tae+'% anual';if(t=='inmueble')return a.alq=='Sí'?' · alquilado':'';const c=cost(i);return c?' · '+((val(i)/c-1)*100).toFixed(1)+'%':''}
+function rowsOf(t,it){if(t!='accion')return it;const m={};it.forEach(i=>{const k=i.a.isin||i.id,g=m[k]=m[k]||{id:i.id,t:'accion',n:0,c:0,a:{...i.a,cant:0}};g.n++;g.a.cant+=num(i.a.cant);g.c+=num(i.a.cant)*num(i.a.pcom)});return Object.values(m).map(g=>{g.a.pcom=g.a.cant?g.c/g.a.cant:0;g.a.nombre=(g.a.nombre||'Acción')+(g.n>1?' ('+g.n+' compras)':'');return g})}
+function home(){const g=groups(),tt=g.reduce((s,x)=>s+x[1],0);
+ let h='<h1>Patrimonio total</h1><p class="tot">'+eur(total())+'</p>';
+ if(!D.items.length)return h+'<div class="card"><p>Aún no tienes nada registrado.</p><button class="btn main" onclick="go(\'add\')">Añadir tu primer activo</button></div>';
+ h+='<div class="tabs" role="tablist">'+[['t','Por tipo'],['e','Por entidad'],['l','Por liquidez']].map(x=>'<button class="'+(grp==x[0]?'on':'')+'" onclick="grp=\''+x[0]+'\';render()">'+x[1]+'</button>').join('')+'</div>';
+ h+='<div class="card flex">'+donut(g)+'<div class="legend">'+g.map((x,k)=>'<div><span><i class="dot" style="background:'+PAL[k%8]+'"></i>'+esc(x[0])+'</span><b>'+Math.round(x[1]/tt*100)+'%</b></div>').join('')+'</div></div>';
+ return h+'<h2>Evolución</h2><div class="card">'+line()+'</div>'}
+function list(){if(!D.items.length)return '<h2>Mis activos</h2><p class="mut">Todavía no hay activos.</p>';
+ let h='<h2 style="margin-top:0">Mis activos</h2>';
+ Object.keys(T).forEach(t=>{const it=D.items.filter(i=>i.t==t);if(!it.length)return;
+  h+='<h1 style="margin-top:18px">'+T[t].n+'</h1><div class="card">'+rowsOf(t,it).map(i=>'<div class="row" role="button" tabindex="0" style="cursor:pointer" onclick="det('+i.id+')" onkeydown="if(event.key==\'Enter\')det('+i.id+')"><div><b>'+esc(i.a.nombre||T[t].n)+'</b><div class="mut">'+esc(i.a.ent||'')+rentTxt(i)+'</div></div><div style="text-align:right"><b>'+eur(val(i))+'</b><div class="mut">'+gainTxt(i)+'</div></div></div>').join('')+'</div>'});
+ return h}
+function det(id){sel=id;view='det';render()}
+function detail(){const i0=D.items.find(x=>x.id==sel);if(!i0){view='list';return list()}const lots=i0.t=='accion'?D.items.filter(x=>x.t=='accion'&&(x.a.isin||'')==(i0.a.isin||'')):[],i=i0.t=='accion'?rowsOf('accion',lots)[0]:i0;
+ const u=UPD[i.t];
+ let h='<button class="btn" onclick="go(\'list\')">Volver</button><h2>'+esc(i.a.nombre||T[i.t].n)+'</h2><p class="tot" style="font-size:38px">'+eur(val(i))+'</p><p class="mut">Valor estimado hoy · '+T[i.t].n+' '+gainTxt(i)+'</p><div class="card">';
+ h+=T[i.t].q.filter(q=>q[0]!='nombre'&&!(i.t=='accion'&&q[0]=='fc')&&i.a[q[0]]).map(q=>'<div class="row"><span class="mut">'+(LBL[q[0]]||q[0])+'</span><span>'+esc(i.a[q[0]])+'</span></div>').join('')+'</div>';
+ if(lots.length)h+='<h2>Compras</h2><div class="card">'+lots.map(l=>'<div class="row"><span>'+esc(l.a.fc||'—')+' · '+esc(l.a.cant)+' × '+esc(l.a.pcom)+' €</span><button class="btn" onclick="del('+l.id+')">Eliminar</button></div>').join('')+'</div><button class="btn" onclick="more(\''+esc(i.a.isin)+'\')">Añadir otra compra</button>';
+ if(i.t=='inmueble'&&i.a.alq=='Sí'){const am=num(i.a.amort)+num(i.a.alqm)*days(i.f,today())/30.44,rest=Math.max(0,cost(i)-am),mm=num(i.a.alqm)?Math.ceil(rest/num(i.a.alqm)):0;h+='<div class="card"><div class="row"><span class="mut">Amortizado hasta hoy</span><b>'+eur(am)+'</b></div><div class="row"><span class="mut">Queda por rentabilizar</span><b>'+eur(rest)+'</b></div><div class="row"><span class="mut">Meses estimados</span><b>'+mm+'</b></div></div>'}
+ if(u)h+='<div class="card"><label class="mut" for="nv2">'+u[1]+'</label><input id="nv2" inputmode="decimal"><div class="sp"><button class="btn main" onclick="upd('+i.id+')">Guardar valor</button></div></div>';
+ return h+(i.t=='accion'?'':'<div class="sp"><button class="btn" onclick="del('+i.id+')">Eliminar este activo</button></div>')}
+function upd(id){const i=D.items.find(x=>x.id==id),u=UPD[i.t],v=$('#nv2').value.trim();if(!v)return;i.a[u[0]]=v;if(i.t=='accion'){D.px=D.px||{};D.px[(i.a.isin||'').toUpperCase()]=v}if(i.t=='cuenta')i.f=today();snap();save();render()}
+function del(id){if(!confirm('¿Eliminar este activo?'))return;D.items=D.items.filter(x=>x.id!=id);snap();save();view='list';render()}
+const qs=()=>T[W.t].q.filter(q=>!q[3]||W.a[q[3]]=='Sí');
+function add(){if(!W)return '<h2 style="margin-top:0">¿Qué quieres añadir?</h2>'+Object.keys(T).map(t=>'<button class="opt" onclick="W={t:\''+t+'\',i:0,a:{}};render()">'+T[t].n+'</button>').join('');
+ const L=qs();
+ if(W.i>=L.length){return '<h2 style="margin-top:0">Revisa y guarda</h2><div class="card">'+L.map(q=>'<div class="row"><span class="mut">'+(q[0]=='nombre'?'Nombre':LBL[q[0]]||q[0])+'</span><span>'+esc(W.a[q[0]]||'—')+'</span></div>').join('')+'</div><div class="sp"><button class="btn" onclick="back()">Atrás</button><button class="btn main" onclick="fin()">Guardar activo</button></div>'}
+ const q=L[W.i],k=q[2];
+ let h='<div class="bar"><i style="width:'+Math.round(W.i/L.length*100)+'%"></i></div><h2 style="margin-top:0"><label for="in">'+q[1]+'</label></h2>';
+ if(k=='y')h+='<button class="opt" onclick="ans(\'Sí\')">Sí</button><button class="opt" onclick="ans(\'No\')">No</button>';
+ else if(k[0]=='s')h+=k.slice(2).split('|').map(o=>'<button class="opt" onclick="ans(\''+o+'\')">'+o+'</button>').join('');
+ else h+='<input id="in" '+(k=='d'?'type="date"':k=='n'?'inputmode="decimal"':'')+' value="'+esc(W.a[q[0]]||'')+'" onkeydown="if(event.key==\'Enter\')nx()"><div class="err" id="er"></div><div class="sp"><button class="btn main" onclick="nx()">Siguiente</button></div>';
+ return h+'<div class="sp"><button class="btn" onclick="back()">Atrás</button></div>'}
+function ans(v){W.a[qs()[W.i][0]]=v;W.i++;render()}
+function nx(){const q=qs()[W.i],v=$('#in').value.trim();if(q[2]=='n'&&!v){$('#er').textContent='Escribe un número.';return}ans(v)}
+function back(){if(W.i>0)W.i--;else W=null;render()}
+function more(isin){const l=D.items.find(x=>x.t=='accion'&&(x.a.isin||'')==isin).a;W={t:'accion',i:3,a:{isin:l.isin,nombre:l.nombre,ent:l.ent,pact:PX({a:l})}};view='add';render()}
+function fin(){if(W.t=='accion'&&W.a.isin){W.a.isin=W.a.isin.trim().toUpperCase();D.px=D.px||{};D.px[W.a.isin]=W.a.pact}D.items.push({id:Date.now(),t:W.t,a:W.a,f:today()});W=null;snap();save();view='list';render()}
+function settings(){const ex=JSON.stringify({...D,key:undefined});
+ return '<h2 style="margin-top:0">Copia de seguridad</h2><p class="mut">Copia este texto y guárdalo en un lugar seguro. Contiene tus datos sin cifrar.</p><textarea id="ex" readonly>'+esc(ex)+'</textarea><div class="sp"><button class="btn" onclick="$(\'#ex\').select();document.execCommand(\'copy\')">Copiar</button></div><h2>Restaurar</h2><textarea id="im" placeholder="Pega aquí tu copia de seguridad"></textarea><div class="err" id="er"></div><div class="sp"><button class="btn" onclick="imp()">Restaurar datos</button></div><h2>Precios online</h2><p class="mut">Clave gratuita de Eulerpool. Se guarda cifrada en este dispositivo.</p><label class="mut" for="ky">Clave</label><input id="ky" type="password" value="'+esc(D.key||'')+'"><div class="sp"><button class="btn" onclick="saveKey()">Guardar clave</button><button class="btn main" onclick="prices()">Actualizar precios</button></div><div class="err" id="st" style="white-space:pre-wrap"></div><h2>Sesión</h2><div class="sp"><button class="btn main" onclick="lock()">Bloquear</button></div>'}
+function saveKey(){D.key=$('#ky').value.trim();save();$('#st').textContent='Clave guardada.'}
+async function prices(){const st=$('#st'),k=$('#ky').value.trim()||D.key||'';if(!k){st.textContent='Primero pega tu clave.';return}
+ D.key=k;D.px=D.px||{};const isins=[...new Set(D.items.filter(i=>i.t=='accion'&&i.a.isin).map(i=>i.a.isin.toUpperCase()))];
+ if(!isins.length){st.textContent='No hay acciones con ISIN.';return}
+ st.textContent='Consultando…';const out=[];
+ for(const c of isins){try{const r=await fetch('https://api.eulerpool.com/api/1/quotes/'+c,{headers:{Authorization:'Bearer '+k}});
+  if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json(),o=Array.isArray(j)?j[0]:j,p=num(o&&(o.price??o.last??o.close??o.c));
+  if(!p)throw new Error('sin precio en la respuesta: '+JSON.stringify(j).slice(0,120));D.px[c]=p;out.push(c+': '+p)}
+ catch(e){out.push(c+': error ('+e.message+(e.message=='Failed to fetch'?'; el navegador bloqueó la petición o no hay conexión':'')+')')}}
+ snap();await save();st.textContent=out.join('\n')+'\nLos precios vienen en la moneda de cotización; revísalos si no son euros.'}
+function imp(){try{const d=JSON.parse($('#im').value);if(!Array.isArray(d.items))throw 0;D={items:d.items,hist:d.hist||[],px:d.px||{},key:D.key};snap();save();view='home';render()}catch(e){$('#er').textContent='La copia no es válida.'}}
+function go(v){view=v;W=null;render()}
+function render(){const m=$('#m'),nv=$('#nv');
+ if(!K){nv.hidden=true;const n=!stored();m.innerHTML='<div class="lock"><h1>Mi patrimonio</h1><p class="tot" style="font-size:34px">'+(n?'Crea tu contraseña maestra':'Introduce tu contraseña')+'</p><p class="mut">'+(n?'Cifra tus datos en este dispositivo. Si la olvidas, no se pueden recuperar.':'Tus datos están cifrados.')+'</p><label class="mut" for="pw">Contraseña maestra</label><input id="pw" type="password" autocomplete="current-password" onkeydown="if(event.key==\'Enter\')unlock()"><div class="err" id="er"></div><div class="sp"><button class="btn main" onclick="unlock()">'+(n?'Crear y entrar':'Entrar')+'</button></div></div>';return}
+ nv.hidden=false;const tabs=[['home','Inicio'],['list','Activos'],['add','Añadir'],['set','Ajustes']];
+ nv.innerHTML=tabs.map(t=>'<button class="'+((view==t[0]||(view=='det'&&t[0]=='list'))?'on':'')+'" onclick="go(\''+t[0]+'\')">'+t[1]+'</button>').join('');
+ m.innerHTML=view=='home'?home():view=='list'?list():view=='det'?detail():view=='add'?add():settings();
+ const f=$('#in');if(f)f.focus()}
+render();
+</script></body></html>
